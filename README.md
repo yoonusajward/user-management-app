@@ -1,4 +1,4 @@
-# Junior Software Developer Technical Assessment
+# User Management Application
 
 A simple user management application built with Next.js, TypeScript, Tailwind CSS, Firebase Authentication, and Cloud Firestore. It also includes a Fibonacci table generator.
 
