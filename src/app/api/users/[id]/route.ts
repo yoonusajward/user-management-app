@@ -113,3 +113,52 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest, context: RouteContext) {
+  try {
+    const authorization = request.headers.get("authorization");
+
+    if (!authorization?.startsWith("Bearer ")) {
+      return NextResponse.json(
+        { message: "Unauthorized." },
+        { status: 401 }
+      );
+    }
+
+    const idToken = authorization.split("Bearer ")[1];
+    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    const { id } = await context.params;
+
+    if (decodedToken.uid === id) {
+      return NextResponse.json(
+        { message: "You cannot delete your own account." },
+        { status: 400 }
+      );
+    }
+
+    await adminAuth.getUser(id);
+    await adminAuth.deleteUser(id);
+    await adminDb.collection("users").doc(id).delete();
+
+    return NextResponse.json({ message: "User deleted successfully." });
+  } catch (error: unknown) {
+    console.error("Delete user error:", error);
+
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "auth/user-not-found"
+    ) {
+      return NextResponse.json(
+        { message: "User not found." },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(
+      { message: "Unable to delete user." },
+      { status: 500 }
+    );
+  }
+}

@@ -108,6 +108,49 @@ export default function UsersPage() {
     setCurrentPage(1);
   }
 
+  async function handleDelete(user: AppUser) {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${user.name}?`
+    );
+
+    if (!confirmed) return;
+
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+      router.replace("/login");
+      return;
+    }
+
+    try {
+      setError("");
+      const idToken = await currentUser.getIdToken();
+      const response = await fetch(
+        `/api/users/${encodeURIComponent(user.id)}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+        }
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.message || "Unable to delete user.");
+        return;
+      }
+
+      setUsers((currentUsers) =>
+        currentUsers.filter((listedUser) => listedUser.id !== user.id)
+      );
+      setCurrentPage(1);
+    } catch (err) {
+      console.error(err);
+      setError("Something went wrong while deleting the user.");
+    }
+  }
+
   async function handleLogout() {
     await signOut(auth);
     router.replace("/login");
@@ -289,9 +332,8 @@ export default function UsersPage() {
 
                                 <button
                                   type="button"
-                                  disabled
-                                  title="Delete will be implemented next"
-                                  className="font-medium text-gray-400"
+                                  onClick={() => handleDelete(user)}
+                                  className="font-medium text-red-600 hover:underline"
                                 >
                                   Delete
                                 </button>
